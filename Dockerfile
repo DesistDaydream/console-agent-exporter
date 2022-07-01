@@ -9,7 +9,7 @@ COPY go.sum go.sum
 RUN go mod download
 
 COPY ./ /root/prometheus-instrumenting
-RUN go build -o console-agent-exporter ./cmd/e37_exporter/*.go
+RUN go build -o console-agent-exporter ./cmd/console_agent_exporter/*.go
 
 FROM alpine
 LABEL org.opencontainers.image.source https://github.com/DesistDaydream/prometheus-instrumenting
