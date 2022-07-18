@@ -21,8 +21,9 @@ import (
 
 // 这三个常量用于给每个 Metrics 名字添加前缀
 const (
-	name      = "console_agent_exporter"
-	Namespace = "console_agent"
+	name = "console_agent_exporter"
+	// Namespace = "console_agent"
+	Namespace = "consoler"
 	exporter  = "exporter"
 )
 

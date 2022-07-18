@@ -3,13 +3,12 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"runtime"
 
 	"github.com/DesistDaydream/console-agent-exporter/pkg/collector"
+	"github.com/DesistDaydream/console-agent-exporter/pkg/logging"
 	"github.com/DesistDaydream/prometheus-instrumenting/pkg/scraper"
 	"github.com/coreos/go-systemd/daemon"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -38,39 +37,17 @@ func DumpStacks() {
 	logrus.Printf("=== BEGIN goroutine stack dump ===\n%s\n=== END goroutine stack dump ===", buf)
 }
 
-// LogInit 日志功能初始化，若指定了 log-output 命令行标志，则将日志写入到文件中
-func LogInit(level, file string) error {
-	logrus.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp:   true,
-		TimestampFormat: "2006-01-02 15:04:05",
-	})
-	le, err := logrus.ParseLevel(level)
-	if err != nil {
-		return err
-	}
-	logrus.SetLevel(le)
-
-	if file != "" {
-		f, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE, 0755)
-		if err != nil {
-			return err
-		}
-		logrus.SetOutput(f)
-	}
-
-	return nil
-}
-
 func main() {
 	// 设置通用包中的指标的前缀
 	scraper.Namespace = collector.Namespace
 
 	// 设置命令行标志，开始
-	//
 	listenAddress := pflag.String("web.listen-address", ":19097", "Address to listen on for web interface and telemetry.")
 	metricsPath := pflag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
-	logLevel := pflag.String("log-level", "info", "The logging level:[debug, info, warn, error, fatal]")
-	logFile := pflag.String("log-output", "", "the file which log to, default stdout")
+
+	// 设置日志相关命令行标志
+	logFlags := logging.LoggingFlags{}
+	logFlags.AddFlags()
 	// pflag.StringVar(&collector.HarborVersion, "override-version", "", "override the harbor version")
 
 	// 设置关于抓取 Metric 目标客户端的一些信息的标志
@@ -98,8 +75,8 @@ func main() {
 	// 设置命令行标志，结束
 
 	// 初始化日志
-	if err := LogInit(*logLevel, *logFile); err != nil {
-		logrus.Fatal(errors.Wrap(err, "set log level error"))
+	if err := logging.LogInit(logFlags.LogLevel, logFlags.LogOutput, logFlags.LogFormat); err != nil {
+		logrus.Fatal("初始化日志失败", err)
 	}
 
 	// 下面的都是 Exporter 运行的最主要逻辑了
